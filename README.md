@@ -1,4 +1,3 @@
-[README на русском](/tizis/laravel-comments/blob/master/readme-ru.md)
 
 [](#laracomments)laraComments
 =============================
@@ -42,7 +41,7 @@ composer require tizis/lara-comments
 
 We need to create the table for comments.
 
- php artisan migrate 
+`php artisan migrate`
 
 ### [](#2-add-commenter-trait-to-your-user-model)2\. Add Commenter trait to your User model
 
@@ -55,20 +54,18 @@ class User extends Authenticatable {
 
 ### [](#3-create-comment-model)3\. Create Comment model
 
- 
-use tizis\\laraComments\\Entity\\Comment as laraComment;
+`use tizis\\laraComments\\Entity\\Comment as laraComment;`
 
-class Comment extends laraComment
+`class Comment extends laraComment
 {
-
-}
+}`
 
 ### [](#4-add-commentable-trait-and-the-icommentable-interface-to-models)4\. Add `Commentable` trait and the `ICommentable` interface to models
 
 Add the `Commentable` trait and the `ICommentable` interface to the model for which you want to enable comments for:
 
-use tizis\\laraComments\\Contracts\\ICommentable;
-use tizis\\laraComments\\Traits\\Commentable;     
+`use tizis\\laraComments\\Contracts\\ICommentable;
+use tizis\\laraComments\\Traits\\Commentable;`
      
 class Post extends Model implements ICommentable {        
    use Commentable;        
@@ -77,42 +74,11 @@ class Post extends Model implements ICommentable {
 
 If you need, you can overwrite default comment policy class:
 
-<?php
-namespace App\\Http\\Policies;
-
-use App\\Entity\\Comment;
-
-use tizis\\laraComments\\Policies\\CommentPolicy as CommentPolicyPackage;
-
-class CommentPolicy extends CommentPolicyPackage
-{
-   // overwrite delete rule
-   public function delete($user, $comment): bool
-   {
-       // ever true
-       return true;
-   }
-}
-
 Then register policy in `AuthServiceProvider`:
-
-use Illuminate\\Support\\Facades\\Gate;
-use App\\Http\\Policies\\CommentPolicy;
-...
-public function boot()
-{
-    Gate::resource('comments\_custom', CommentPolicy::class, \[
-        'delete' => 'delete',
-        'reply' => 'reply',
-        'edit' => 'edit',
-        'vote' => 'vote',
-        'store => 'store'
-    \]);
-}
 
 And add policy prefix to comments.php config
 
-    'policy\_prefix' => 'comments\_custom',
+`'policy\_prefix' => 'comments\_custom',`
 
 ### [](#publish-config--configure-optional)Publish Config & configure (optional)
 
@@ -126,13 +92,10 @@ In the `config` file you can specify:
 
 Publish the config file (optional):
 
-php artisan vendor:publish --provider="tizis\\laraComments\\Providers\\ServiceProvider" --tag=config 
-
+`php artisan vendor:publish --provider="tizis\\laraComments\\Providers\\ServiceProvider" --tag=config `
 ### [](#publish-views-customization)Publish views (customization)
 
 The default UI is made for `Bootstrap 4`, but `you can change it` however you want.
-
-⚠⚠⚠⚠**WARNING**⚠⚠⚠⚠
 
 All view examples include js/css files for correct working. `The possibility of conflict` with your scripts and styles.
 
@@ -145,16 +108,6 @@ php artisan vendor:publish --provider="tizis\\laraComments\\Providers\\ServicePr
 
 In the view where you want to display comments, place this code and modify it:
 
-    laravel 6
-    
-    @comments(['model' => $post]) @endcomments   
-    
-
-    Laravel 7
-    
-    <x-comments :model="$post"/>  
-    
-
 In the example above we are setting argument the `model` as class of the book model.
 
 Behind the scenes, the package detects the currently logged in user if any.
@@ -163,131 +116,7 @@ If you open the page containing the view where you have placed the above code, y
 
 ### [](#2-frontend-rendering-api)2\. Frontend rendering (API):
 
-Title
-
-Method
-
-Url
-
-Params
-
-Route name
-
-Get comments
-
-GET
-
-/api/comments/
-
-commentable\_encrypted\_key, order\_by (column name, default is id), order\_direction (default is asc)
-
-route('comments.get')
-
-Store comment
-
-POST
-
-/api/comments/
-
-commentable\_encrypted\_key, message
-
-route('comments.store')
-
-Delete comment
-
-DELETE
-
-/api/comments/{comment\_id}
-
-\--
-
-route('comments.delete', $comment\_id)
-
-Edit comment
-
-POST
-
-/api/comments/{comment\_id}
-
-message
-
-route('comments.update', $comment\_id)
-
-Reply to comment
-
-POST
-
-/api/comments/{comment\_id}
-
-message
-
-route('comments.reply', $comment\_id)
-
-Vote to comment
-
-POST
-
-/api/comments/{comment\_id}/vote
-
-vote(bool)
-
-route('comments.vote', $comment\_id)
-
-### [](#3-access-to-the-comment-service)3\. Access to the comment service
-
-If you don't want use out of the box features: API, or the CommentController, but want to access the built-in features - you can use `tizis\laraComments\UseCases\CommentService`
-
-`CommentService` class used inside default comment controller for request processing.
-
 To disable API routes by default, set the `route.root => null` config value.
-
-**Methods**:
-
-1.  Сreate comment: `CommentService::createComment`
-
-    $user = Auth::user();
-    $modelId = decrypt($request->commentable_encrypted_key)['id']; // get model id from encrypted model key 
-    $model = $model = Post::findOrFail($modelId);
-    $message = '123'
-    
-    $parent = rand(1, 100); // optional
-    
-    $createdComment = CommentService::createComment(new Comment(), $user, $model, $message, [optional $parent]);
-    
-
-2.  Delete comment: `CommentService::deleteComment`
-
-    $comment = Comment::findOrFail(123);
-    
-    CommentService::deleteComment($comment);
-    
-
-2.  Update comment: `CommentService::updateComment`
-
-      $comment = Comment::findOrFail(123);
-      $message = 'new text';
-      
-      $updatedComment = CommentService::updateComment($comment, $message);
-    
-
-[](#events)Events
------------------
-
-This package fires events to let you know when things happen.
-
-*   `tizis\laraComments\Events\CommentCreated`
-*   `tizis\laraComments\Events\CommentUpdated`
-*   `tizis\laraComments\Events\CommentDeleted`
-
-[](#api-preprocessing)API preprocessing
----------------------------------------
-
-⚠ **WARNING! Only for API!** ⚠
-
-Supported preprocessors for attributes of get api:
-
-*   user **\[Object\]**
-*   comment **\[String\]**
 
 #### [](#1-description)1\. Description
 
