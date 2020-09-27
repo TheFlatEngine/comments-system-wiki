@@ -7,68 +7,125 @@ This package can be used to comment on any model you have in your application.
 ### [](#features)Features
 
 *    View comments
-*    Create comment
+*    Add comment
 *    Delete comment
 *    Edit comment
 *    Reply to comment
-*    Authorization rules | with customization
-*    View customization
-*    Dispatch events
-*    Likes | Dislikes | Comment rating
-*    API for basic function: get, update, delete, create
+*    React comments (like, haha, wow, etc...)
+*    Mention friends in comments
+*    Ajax load
+*    Dark/Light theme
+*    Emoji built-in
 *    HTML filter customization (using HTMLPurifier)
 
-[](#upgrade-guides--)[Upgrade guides →](#upgrade-guides)
---------------------------------------------------------
-
-*   [From 2.x.x to 3.0](#from-2xx-to-30)
-
-[](#requirements)Requirements
+[](#requirements) Requirements
 -----------------------------
 
-*   php 7.1 +
-*   laravel 5.6 +
-*   `Your application should contain auth module.`
-    *   Laravel 6.x: [https://laravel.com/docs/6.x/authentication](https://laravel.com/docs/6.x/authentication)
-    *   Laravel 5.6: [https://laravel.com/docs/5.6/authentication](https://laravel.com/docs/5.6/authentication)
+*   PHP 7.2 +
+*   Laravel 5.8 +
+*   jQuery 3+
+*   atwho https://github.com/ichord/At.js
+*   Javascript template https://github.com/blueimp/JavaScript-Templates
+*   jQuery Ajax Form https://github.com/malsup/form
+
+Seen like many but don't worry, we included everything (except jQuery) inside the package. You just need to use it.
 
 [](#installation)Installation
 -----------------------------
 
-composer require tizis/lara-comments 
+Extract the files from the archive you have downloaded from CodeCanyon into a vendor folder in your project root.
+
+Edit your composer.json file and add a local path repository:
+
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./theflatengine/comments"
+        }
+    ]
+
+
+In your terminal run:
+
+    composer require theflatengine/comments *@dev
 
 ### [](#1-run-migrations)1\. Run migrations
 
 We need to create the table for comments.
 
-`php artisan migrate`
+For 5.4 and bellow, add the service provider:
+
+    // config/app.php
+    'providers' => [
+        ...
+        TheFlatEngine\Comments\CommentsServiceProvider::class,
+    ];
+For 5.2 and bellow, you have to publish the migrations with:
+
+    php artisan vendor:publish --provider="TheFlatEngine\Comments\CommentsServiceProvider" --tag=migrations
+
+Run the migrate command to create the necessary tables:
+
+    php artisan migrate
+Publish the assets files with:
+
+    php artisan vendor:publish --provider="TheFlatEngine\Comments\CommentsServiceProvider" --tag=public
+You can publish the config-file with:
+
+    php artisan vendor:publish --provider="TheFlatEngine\Comments\CommentsServiceProvider" --tag=config
+Additionally you may want to clear the config, cache, etc:
+
+    php artisan config:clear
+    php artisan route:clear
+    php artisan cache:clear
+    php artisan view:clear
 
 ### [](#2-add-commenter-trait-to-your-user-model)2\. Add Commenter trait to your User model
 
-Add the `Commenter` trait to your User model so that you can retrieve the comments for a user:
+Add the `Attributes` trait to your User model so that you can retrieve user avatar and user's profile link (why? we are have mention feature so everytime people mention each other, they will able to visit user's profile too):
 
-use tizis\\laraComments\\Traits\\Commenter;
-     
-class User extends Authenticatable {   
-	use ..., Commenter;   
+    class User extends Authenticatable
+    {
+        use Notifiable;
+        
+        protected $appends = [
+            'artwork_url', 'permalink_url'
+        ];
+        
+        protected $fillable = [
+            'name', 'email', 'password',
+        ];
 
-### [](#3-create-comment-model)3\. Create Comment model
+        protected $hidden = [
+            'password', 'remember_token',
+        ];
 
-`use tizis\\laraComments\\Entity\\Comment as laraComment;`
-
-`class Comment extends laraComment
-{
-}`
-
-### [](#4-add-commentable-trait-and-the-icommentable-interface-to-models)4\. Add `Commentable` trait and the `ICommentable` interface to models
-
-Add the `Commentable` trait and the `ICommentable` interface to the model for which you want to enable comments for:
-
-`use tizis\\laraComments\\Contracts\\ICommentable;
-use tizis\\laraComments\\Traits\\Commentable;`
-     
-class Post extends Model implements ICommentable {        
-   use Commentable;        
+        protected $casts = [
+            'email_verified_at' => 'datetime',
+        ];
+        
+        
+        
+        //Custom code
+        public function getArtworkUrlAttribute($value)
+        {
+            //Change to your avatar generator
+            $size = 80;
+            return "https://www.gravatar.com/avatar/" . md5( strtolower( $this->id ) ) . "?d=retro&s=" . $size;
+        }
+    
+        /**
+         * @param $value
+         * @return string
+         * Link to user profile here
+         */
+    
+        public function getPermalinkUrlAttribute($value)
+        {
+            //you can return a router like route('user.profile', ['id' => $this->id])
+            return url($this->id);
+        }
+    }
 
 ### [](#5-custom-comment-policy-optional)5\. Custom comment policy (optional)
 
@@ -235,28 +292,3 @@ This repository include only `bootstrap4` template, but you can create you own U
 This is example of `backend`rendering, `this way have bad performance` when 100+ comments on post due to the need to check user permissions (reply, edit, delete etc) for each comment.
 
 `A good idea` is use API and build UI with Vue js (or any other library) with verification of user permissions (only for UI) on frontend.
-
-1.  Build with semantic ui  
-    [![2222d](https://user-images.githubusercontent.com/16865573/48430226-0124c680-e799-11e8-9341-daac331236b2.png)](https://user-images.githubusercontent.com/16865573/48430226-0124c680-e799-11e8-9341-daac331236b2.png)
-2.  Build with bootstrap 4  
-    [![3333](https://user-images.githubusercontent.com/16865573/48430227-0124c680-e799-11e8-8cdb-8dd042155550.png)](https://user-images.githubusercontent.com/16865573/48430227-0124c680-e799-11e8-8cdb-8dd042155550.png)
-
-[](#upgrade-guides)Upgrade guides
----------------------------------
-
-### [](#from-2xx-to-30)From 2.x.x to 3.0
-
-`commentable_type` and `commentable_id` request attributes was merged into single `commentable_encrypted_key`
-
-You need to replace these deprecated attributes.
-
-Example:
-
-    Old /bootstrap4/form.blade.php
-    <input type="hidden" name="commentable_type" value="\{{ get_class($model) }}"/>
-    <input type="hidden" name="commentable_id" value="{{ $model->id }}"/>
-    
-    
-
-    New /bootstrap4/form.blade.php
-    <input type="hidden" name="commentable_encrypted_key" value="{{ $model->getEncryptedKey() }}"/>
